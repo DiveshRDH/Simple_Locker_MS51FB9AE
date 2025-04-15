@@ -1,0 +1,190 @@
+C51 COMPILER V9.60.7.0   MAIN                                                              04/15/2025 18:03:06 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: C:\Users\PAYAL\AppData\Local\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\Libra
+                    -ry\Device\Include;.\Library\StdDriver\inc) DEBUG OBJECTEXTEND PRINT(.\Listings\main.lst) TABS(2) OBJECT(.\Objects\main.o
+                    -bj)
+
+line level    source
+
+   1          #include "MS51_16K.H"
+   2          
+   3          // Segment pins
+   4          sbit SEG_A = P1^3;
+   5          sbit SEG_B = P0^0;
+   6          sbit SEG_C = P1^5;
+   7          sbit SEG_D = P0^3;
+   8          sbit SEG_E = P0^1;
+   9          sbit SEG_F = P1^2;
+  10          sbit SEG_G = P1^7;
+  11          sbit SEG_DP = P0^4;
+  12          
+  13          // Digit pins
+  14          sbit DIGIT1 = P1^4;
+  15          sbit DIGIT2 = P1^1;
+  16          sbit DIGIT3 = P1^0;
+  17          
+  18          // Relay pin
+  19          sbit RELAY = P0^6; // High=OFF (NC), Low=ON (NO)
+  20          
+  21          // Segment patterns (0–9, O, P, N, E, R)
+  22          const unsigned char patterns[15] = {
+  23              0x3F, // 0
+  24              0x06, // 1
+  25              0x5B, // 2
+  26              0x4F, // 3
+  27              0x66, // 4
+  28              0x6D, // 5
+  29              0x7D, // 6
+  30              0x07, // 7
+  31              0x7F, // 8
+  32              0x6F, // 9
+  33              0x3F, // O
+  34              0x73, // P
+  35              0x37, // N
+  36              0x79, // E
+  37              0x50  // R
+  38          };
+  39          
+  40          // Delay (~16MHz)
+  41          void delay_ms(unsigned char ms) {
+  42   1          unsigned char i, j;
+  43   1          for (i = 0; i < ms; i++)
+  44   1              for (j = 0; j < 160; j++);
+  45   1      }
+  46          
+  47          // Display character
+  48          void set_segments(char c) {
+  49   1          unsigned char seg = 0;
+  50   1          if (c >= '0' && c <= '9') seg = patterns[c - '0'];
+  51   1          else if (c == 'O') seg = patterns[10];
+  52   1          else if (c == 'P') seg = patterns[11];
+  53   1          else if (c == 'N') seg = patterns[12];
+C51 COMPILER V9.60.7.0   MAIN                                                              04/15/2025 18:03:06 PAGE 2   
+
+  54   1          else if (c == 'E') seg = patterns[13];
+  55   1          else if (c == 'R') seg = patterns[14];
+  56   1          SEG_A = !(seg & 0x01); SEG_B = !(seg & 0x02);
+  57   1          SEG_C = !(seg & 0x04); SEG_D = !(seg & 0x08);
+  58   1          SEG_E = !(seg & 0x10); SEG_F = !(seg & 0x20);
+  59   1          SEG_G = !(seg & 0x40); SEG_DP = 1;
+  60   1      }
+  61          
+  62          void main(void) {
+  63   1          unsigned char display[3] = {'0', '0', '0'};
+  64   1          unsigned char entry[3] = {0, 0, 0};
+  65   1          const unsigned char password[3] = {8, 9, 4}; // Hardcoded: 894
+  66   1          unsigned char current_digit = 0;
+  67   1          unsigned char btn_timer = 0;
+  68   1          unsigned char last_btn = 0;
+  69   1          bit unlock_status = 0;
+  70   1          unsigned char status_timer = 0;
+  71   1      
+  72   1          // Configure ports
+  73   1          P0M1 &= ~0x5B; P0M2 |= 0x5B;
+  74   1          P1M1 &= ~0xBF; P1M2 |= 0xBF;
+  75   1          P0M1 |= 0x80; P0M2 &= ~0x80;
+  76   1          AINDIDS = 0x80;
+  77   1          ADCCON0 = 0x02;
+  78   1          ADCCON1 = 0x01;
+  79   1          RELAY = 1;
+  80   1          DIGIT1 = 0; DIGIT2 = 0; DIGIT3 = 0;
+  81   1      
+  82   1          while (1) {
+  83   2              unsigned int adc_value;
+  84   2              unsigned char btn = 0, i;
+  85   2      
+  86   2              // Read ADC
+  87   2              ADCCON0 |= 0x40;
+  88   2              while (!(ADCCON0 & 0x80));
+  89   2              ADCCON0 &= ~0x80;
+  90   2              adc_value = (unsigned int)((ADCRH << 2) | (ADCRL >> 6));
+  91   2      
+  92   2              // Detect buttons
+  93   2              if (adc_value >= 133 && adc_value <= 194) btn = 1; // LEFT
+  94   2              else if (adc_value >= 297 && adc_value <= 358) btn = 2; // MIDDLE
+  95   2              else if (adc_value >= 481 && adc_value <= 542) btn = 3; // RIGHT
+  96   2      
+  97   2              // Button logic
+  98   2              if (btn == last_btn) {
+  99   3                  btn_timer++;
+ 100   3                  if (btn_timer >= 4 && btn) { // ~20ms debounce
+ 101   4                      if (btn == 2 && btn_timer >= 140) { // ~700ms hold
+ 102   5                          // Check password
+ 103   5                          if (entry[0] == password[0] && entry[1] == password[1] && entry[2] == password[2]) {
+ 104   6                              unlock_status = 1;
+ 105   6                              RELAY = 0; // ON
+ 106   6                              display[0] = 'O'; display[1] = 'P'; display[2] = 'N';
+ 107   6                          } else {
+ 108   6                              unlock_status = 0;
+ 109   6                              display[0] = 'E'; display[1] = 'R'; display[2] = 'R';
+ 110   6                          }
+ 111   5                          status_timer = 200; // ~1s display
+ 112   5                          btn_timer = 0;
+ 113   5                      }
+ 114   4                  }
+ 115   3              } else {
+C51 COMPILER V9.60.7.0   MAIN                                                              04/15/2025 18:03:06 PAGE 3   
+
+ 116   3                  if (btn_timer >= 4 && btn_timer < 40 && last_btn) { // Click
+ 117   4                      if (last_btn == 1) { // LEFT
+ 118   5                          if (entry[current_digit] > 0) entry[current_digit]--;
+ 119   5                      } else if (last_btn == 3) { // RIGHT
+ 120   5                          if (entry[current_digit] < 9) entry[current_digit]++;
+ 121   5                      } else if (last_btn == 2) { // MIDDLE
+ 122   5                          current_digit = (current_digit + 1) % 3;
+ 123   5                      }
+ 124   4                      display[current_digit] = '0' + entry[current_digit];
+ 125   4                  }
+ 126   3                  btn_timer = 0;
+ 127   3                  last_btn = btn;
+ 128   3              }
+ 129   2      
+ 130   2              // Handle unlock status
+ 131   2              if (status_timer > 0) {
+ 132   3                  status_timer--;
+ 133   3                  if (status_timer == 0) {
+ 134   4                      // Reset display
+ 135   4                      display[0] = '0' + entry[0];
+ 136   4                      display[1] = '0' + entry[1];
+ 137   4                      display[2] = '0' + entry[2];
+ 138   4                      if (unlock_status) {
+ 139   5                          RELAY = 1; // OFF after 5s total
+ 140   5                          unlock_status = 0;
+ 141   5                      }
+ 142   4                  }
+ 143   3              }
+ 144   2      
+ 145   2              // Multiplex display (~66Hz)
+ 146   2              for (i = 0; i < 5; i++) {
+ 147   3                  set_segments(display[0]);
+ 148   3                  DIGIT1 = 1; DIGIT2 = 0; DIGIT3 = 0;
+ 149   3                  delay_ms(5);
+ 150   3                  DIGIT1 = 0;
+ 151   3                  set_segments(display[1]);
+ 152   3                  DIGIT2 = 1; DIGIT1 = 0; DIGIT3 = 0;
+ 153   3                  delay_ms(5);
+ 154   3                  DIGIT2 = 0;
+ 155   3                  set_segments(display[2]);
+ 156   3                  DIGIT3 = 1; DIGIT1 = 0; DIGIT2 = 0;
+ 157   3                  delay_ms(5);
+ 158   3                  DIGIT3 = 0;
+ 159   3              }
+ 160   2          }
+ 161   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    621    ----
+   CONSTANT SIZE    =      9    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     15      17
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

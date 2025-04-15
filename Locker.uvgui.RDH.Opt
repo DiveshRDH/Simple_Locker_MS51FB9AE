@@ -1,0 +1,42 @@
+### uVision2 Project, (C) Keil Software
+### Do not modify !
+
+ cExt (*.c)
+ aExt (*.s*; *.src; *.a*)
+ oExt (*.obj; *.o)
+ lExt (*.lib)
+ tExt (*.txt; *.h; *.inc; *.md)
+ pExt (*.plm)
+ CppX (*.cpp; *.cc; *.cxx)
+ DaveTm { 0,0,0,0,0,0,0,0 }
+
+Target (Target 1), 0x0000 // Tools: 'MCS-51'
+GRPOPT 1,(Source Group 1),1,0,0
+GRPOPT 2,(Library),1,0,0
+
+OPTFFF 1,1,1,201326592,0,1,18,0,<.\main.c><main.c> 
+OPTFFF 1,2,2,0,0,120,126,0,<.\STARTUP.A51><STARTUP.A51> 
+OPTFFF 2,3,1,16777216,0,0,0,0,<.\Library\StdDriver\src\common.c><common.c> 
+OPTFFF 2,4,1,369098752,0,85,109,0,<.\Library\StdDriver\src\delay.c><delay.c> 
+
+
+TARGOPT 1, (Target 1)
+ CLK51=24000000
+  OPTTT 1,1,1,0
+  OPTHX 0,65535,0,0,0
+  OPTLX 120,65,8,<.\Listings\>
+  OPTOX 16
+  OPTLT 1,1,1,0,1,1,0,1,0,0,0,0
+  OPTXL 1,1,1,1,1,1,1,0,0
+  OPTFL 1,0,1
+  OPTAX 0
+  OPTDL (S8051.DLL)()(DP51.DLL)()(S8051.DLL)()(TP51.DLL)()
+  OPTDBG 4111357,11,()()()()()()()()()() (BIN\Nuvoton_8051_Keil_uVision_Driver.dll)()()()
+  OPTKEY 0,(DLGDP51)((98=-1,-1,-1,-1,0)(82=-1,-1,-1,-1,0)(83=-1,-1,-1,-1,0)(84=-1,-1,-1,-1,0)(85=-1,-1,-1,-1,0)(99=-1,-1,-1,-1,0)(91=-1,-1,-1,-1,0)(92=-1,-1,-1,-1,0)(93=-1,-1,-1,-1,0))
+  OPTKEY 0,(DLGTP51)((98=-1,-1,-1,-1,0)(82=-1,-1,-1,-1,0)(83=-1,-1,-1,-1,0)(84=-1,-1,-1,-1,0)(85=-1,-1,-1,-1,0)(99=-1,-1,-1,-1,0)(91=-1,-1,-1,-1,0)(92=-1,-1,-1,-1,0)(93=-1,-1,-1,-1,0))
+  OPTKEY 0,(Nuvoton_8051_Keil_uVision_Driver)()
+  OPTDF 0x86
+  OPTLE <>
+  OPTLC <>
+EndOpt
+

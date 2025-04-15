@@ -18,7 +18,7 @@ sbit DIGIT3 = P1^0;
 // Relay pin
 sbit RELAY = P0^6; // High=OFF (NC), Low=ON (NO)
 
-// Segment patterns (0â€“9, O, P, N, E, R)
+// Segment patterns (0–9, O, P, N, E, R)
 const unsigned char patterns[15] = {
     0x3F, // 0
     0x06, // 1
@@ -62,7 +62,7 @@ void set_segments(char c) {
 void main(void) {
     unsigned char display[3] = {'0', '0', '0'};
     unsigned char entry[3] = {0, 0, 0};
-    const unsigned char password[3] = {8, 9, 4}; // Hardcoded: 123
+    const unsigned char password[3] = {8, 9, 4}; // Hardcoded: 894
     unsigned char current_digit = 0;
     unsigned char btn_timer = 0;
     unsigned char last_btn = 0;

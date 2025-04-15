@@ -1,0 +1,7 @@
+".\Objects\main.obj",
+".\Objects\STARTUP.obj",
+".\Objects\common.obj",
+".\Objects\delay.obj" 
+TO ".\Objects\Hii" 
+PRINT(".\Listings\Hii.m51") RAMSIZE(256) 
+DISABLEWARNING (16) 
